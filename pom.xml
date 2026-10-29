@@ -50,6 +50,8 @@
     <modules>
         <module>backend/customer-service</module>
         <module>backend/modular-monolith</module>
+        <module>backend/product-service</module>
+        <module>backend/order-service</module>
     </modules>
 
 </project>
