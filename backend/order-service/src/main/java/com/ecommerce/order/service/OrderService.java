@@ -12,10 +12,15 @@ import java.util.Map;
 @Service
 public class OrderService {
 
+    private final RestClient inventoryRestClient;
     private final RestClient productRestClient;
 
-    public OrderService(RestClient productRestClient) {
+
+    public OrderService(
+            RestClient productRestClient,
+            RestClient inventoryRestClient) {
         this.productRestClient = productRestClient;
+        this.inventoryRestClient = inventoryRestClient;
     }
 
     public OrderResponse createOrder(OrderRequest request) {
@@ -40,12 +45,18 @@ public class OrderService {
         BigDecimal total = price.multiply(
                 BigDecimal.valueOf(request.quantity()));
 
+        inventoryRestClient.post()
+        .uri("/api/inventory/{id}/reserve?quantity={quantity}",
+                request.productId(), request.quantity())
+        .retrieve()
+        .toBodilessEntity();
+
         return new OrderResponse(
-                request.productId(),
-                product.get("name").toString(),
-                request.quantity(),
-                total,
-                "CREATED"
+            request.productId(),
+            product.get("name").toString(),
+            request.quantity(),
+            total,
+            "CREATED" 
         );
     }
 }

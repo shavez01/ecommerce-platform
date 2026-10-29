@@ -41,6 +41,7 @@
                     <version>3.14.1</version>
                     <configuration>
                         <release>21</release>
+                        <parameters>true</parameters>
                     </configuration>
                 </plugin>
             </plugins>
@@ -49,6 +50,7 @@
 
     <modules>
         <module>backend/customer-service</module>
+        <module>backend/inventory-service</module>
         <module>backend/modular-monolith</module>
         <module>backend/product-service</module>
         <module>backend/order-service</module>
