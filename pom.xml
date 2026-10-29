@@ -53,6 +53,7 @@
         <module>backend/inventory-service</module>
         <module>backend/invoice-service</module>
         <module>backend/modular-monolith</module>
+        <module>backend/notification-service</module>
         <module>backend/payment-service</module>
         <module>backend/product-service</module>
         <module>backend/order-service</module>
