@@ -49,6 +49,7 @@
 
     <modules>
         <module>backend/customer-service</module>
+        <module>backend/modular-monolith</module>
     </modules>
 
 </project>
