@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +19,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log =
+        LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // Handle business exceptions
     @ExceptionHandler(ResponseStatusException.class)
@@ -71,7 +77,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         // Log the actual exception for debugging
-        ex.printStackTrace();
+        log.error("Unexpected application error", ex);
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
