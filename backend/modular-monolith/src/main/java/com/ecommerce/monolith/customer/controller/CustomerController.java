@@ -1,6 +1,9 @@
+
 package com.ecommerce.monolith.customer.controller;
 
-import java.util.List;
+import com.ecommerce.monolith.customer.dto.CustomerRequest;
+import com.ecommerce.monolith.customer.dto.CustomerResponse;
+import com.ecommerce.monolith.customer.service.CustomerService;
 
 import jakarta.validation.Valid;
 
@@ -8,8 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ecommerce.monolith.customer.entity.Customer;
-import com.ecommerce.monolith.customer.service.CustomerService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -21,58 +23,47 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-    // Create customer
     @PostMapping
-    public ResponseEntity<Customer> createCustomer(
-            @Valid @RequestBody Customer customer) {
-
-        Customer createdCustomer =
-                customerService.createCustomer(customer);
+    public ResponseEntity<CustomerResponse> createCustomer(
+            @Valid @RequestBody CustomerRequest request) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(createdCustomer);
+                .body(customerService.createCustomer(request));
     }
 
-    // Get customer by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(
+    public ResponseEntity<CustomerResponse> getCustomerById(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                customerService.getCustomerById(id));
+        return ResponseEntity.ok(customerService.getCustomerById(id));
     }
 
-    // Get all customers
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers() {
+    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
 
-        return ResponseEntity.ok(
-                customerService.getAllCustomers());
+        return ResponseEntity.ok(customerService.getAllCustomers());
     }
 
-    // Update customer
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(
+    public ResponseEntity<CustomerResponse> updateCustomer(
             @PathVariable Long id,
-            @RequestBody Customer customer) {
+            @Valid @RequestBody CustomerRequest request) {
 
         return ResponseEntity.ok(
-                customerService.updateCustomer(id, customer));
+                customerService.updateCustomer(id, request));
     }
 
-    // Delete customer
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(
-            @PathVariable Long id) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
 
         customerService.deleteCustomer(id);
 
         return ResponseEntity.noContent().build();
     }
 
-    // Health check
     @GetMapping("/health")
-    public String health() {
-        return "Customer module is running";
+    public ResponseEntity<String> health() {
+
+        return ResponseEntity.ok("Customer module is running");
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ecommerce.monolith.customer.dto.CustomerResponse;
 import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.product.entity.Product;
@@ -48,7 +49,7 @@ public class OrderService {
     public Order placeOrder(OrderRequest request) {
 
         // 1. Validate customer
-        Customer customer = customerService.getCustomerById(request.getCustomerId());
+        CustomerResponse customer = customerService.getCustomerById(request.getCustomerId());
 
         // 2. Validate product
         Product product =

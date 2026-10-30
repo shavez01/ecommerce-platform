@@ -1,15 +1,16 @@
 
 package com.ecommerce.monolith.customer.service;
 
-import java.util.List;
+import com.ecommerce.monolith.customer.dto.CustomerRequest;
+import com.ecommerce.monolith.customer.dto.CustomerResponse;
+import com.ecommerce.monolith.customer.entity.Customer;
+import com.ecommerce.monolith.customer.repository.CustomerRepository;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.ecommerce.monolith.customer.entity.Customer;
-import com.ecommerce.monolith.customer.repository.CustomerRepository;
+import java.util.List;
 
 @Service
 public class CustomerService {
@@ -20,39 +21,66 @@ public class CustomerService {
         this.customerRepository = customerRepository;
     }
 
-    // Create customer
-    public Customer createCustomer(@NonNull Customer customer) {
-        return customerRepository.save(customer);
+    public CustomerResponse createCustomer(CustomerRequest request) {
+
+        Customer customer = new Customer();
+        customer.setName(request.getName());
+        customer.setEmail(request.getEmail());
+        customer.setPhone(request.getPhone());
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        return mapToResponse(savedCustomer);
     }
 
-    // Get customer by ID
-    public Customer getCustomerById(@NonNull Long id) {
-        return customerRepository.findById(id)
+    public CustomerResponse getCustomerById(Long id) {
+
+        Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Customer not found with ID: " + id));
+                        HttpStatus.NOT_FOUND, "Customer not found"));
+
+        return mapToResponse(customer);
     }
 
-    // Get all customers
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    public List<CustomerResponse> getAllCustomers() {
+
+        return customerRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // Update customer
-    public Customer updateCustomer(@NonNull Long id, Customer updatedCustomer) {
+    public CustomerResponse updateCustomer(Long id, CustomerRequest request) {
 
-        Customer existingCustomer = getCustomerById(id);
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Customer not found"));
 
-        existingCustomer.setName(updatedCustomer.getName());
-        existingCustomer.setEmail(updatedCustomer.getEmail());
-        existingCustomer.setPhone(updatedCustomer.getPhone());
+        customer.setName(request.getName());
+        customer.setEmail(request.getEmail());
+        customer.setPhone(request.getPhone());
 
-        return customerRepository.save(existingCustomer);
+        Customer updatedCustomer = customerRepository.save(customer);
+
+        return mapToResponse(updatedCustomer);
     }
 
-    // Delete customer
-    public void deleteCustomer(@NonNull Long id) {
-        Customer customer = getCustomerById(id);
+    public void deleteCustomer(Long id) {
+
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Customer not found"));
+
         customerRepository.delete(customer);
+    }
+
+    private CustomerResponse mapToResponse(Customer customer) {
+
+        return new CustomerResponse(
+                customer.getId(),
+                customer.getName(),
+                customer.getEmail(),
+                customer.getPhone()
+        );
     }
 }

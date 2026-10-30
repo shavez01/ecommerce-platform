@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.ecommerce.monolith.customer.entity.Customer;
+import com.ecommerce.monolith.customer.dto.CustomerResponse;
+// import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.service.OrderService;
@@ -113,7 +114,7 @@ public class InvoiceService {
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
-        Customer customer =
+        CustomerResponse customer =
                 customerService.getCustomerById(order.getCustomerId());
 
         notificationService.recordNotification(

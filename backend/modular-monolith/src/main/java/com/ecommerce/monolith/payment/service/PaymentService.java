@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.ecommerce.monolith.customer.entity.Customer;
+import com.ecommerce.monolith.customer.dto.CustomerResponse;
+// import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.service.OrderService;
@@ -84,7 +85,7 @@ public class PaymentService {
         // Update order status
         orderService.markOrderAsPaid(order.getId());
 
-        Customer customer =
+        CustomerResponse customer =
         customerService.getCustomerById(order.getCustomerId());
 
         notificationService.recordNotification(
