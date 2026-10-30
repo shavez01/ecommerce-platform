@@ -3,6 +3,10 @@ package com.ecommerce.monolith.inventory.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +16,7 @@ import com.ecommerce.monolith.inventory.service.InventoryService;
 
 @RestController
 @RequestMapping("/api/inventory")
+@Validated
 public class InventoryController {
 
     private final InventoryService inventoryService;
@@ -23,7 +28,7 @@ public class InventoryController {
     // Create inventory
     @PostMapping
     public ResponseEntity<Inventory> createInventory(
-            @RequestBody Inventory inventory) {
+            @Valid @RequestBody Inventory inventory) {
 
         Inventory createdInventory =
                 inventoryService.createInventory(inventory);
@@ -52,8 +57,11 @@ public class InventoryController {
     // Add stock
     @PatchMapping("/{productId}/add")
     public ResponseEntity<Inventory> addStock(
-            @PathVariable Long productId,
-            @RequestParam Integer quantity) {
+            @PathVariable @Positive(message = "Product ID must be positive") 
+            Long productId,
+
+            @RequestParam @Positive(message = "Quantity must be greater than zero") 
+            Integer quantity) {
 
         return ResponseEntity.ok(
                 inventoryService.addStock(productId, quantity));
@@ -62,8 +70,10 @@ public class InventoryController {
     // Reduce stock
     @PatchMapping("/{productId}/reduce")
     public ResponseEntity<Inventory> reduceStock(
-            @PathVariable Long productId,
-            @RequestParam Integer quantity) {
+            @PathVariable @Positive(message = "Product ID must be positive")
+            Long productId,
+
+            @RequestParam @Positive(message = "Quantity must be greater than zero") Integer quantity) {
 
         return ResponseEntity.ok(
                 inventoryService.reduceStock(productId, quantity));

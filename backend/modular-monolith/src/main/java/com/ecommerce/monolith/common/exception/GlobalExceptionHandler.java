@@ -4,6 +4,7 @@ package com.ecommerce.monolith.common.exception;
 import java.time.LocalDateTime;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -77,6 +78,25 @@ public class GlobalExceptionHandler {
                 "An unexpected error occurred",
                 request.getRequestURI());
     }
+
+    
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(
+            ConstraintViolationException ex,
+            HttpServletRequest request) {
+
+        String message = ex.getConstraintViolations()
+                .stream()
+                .map(error -> error.getMessage())
+                .findFirst()
+                .orElse("Request validation failed");
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                message,
+                request.getRequestURI());
+    }
+
 
     private ResponseEntity<ApiError> buildResponse(
             HttpStatus status,

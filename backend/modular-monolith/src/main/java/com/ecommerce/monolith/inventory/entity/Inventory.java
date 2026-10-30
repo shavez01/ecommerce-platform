@@ -3,6 +3,10 @@ package com.ecommerce.monolith.inventory.entity;
 
 import jakarta.persistence.*;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
 @Entity
 @Table(name = "monolith_inventory")
 public class Inventory {
@@ -11,9 +15,13 @@ public class Inventory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull(message = "Product ID is required")
+    @Positive(message = "Product ID must be positive")
     @Column(nullable = false, unique = true)
     private Long productId;
 
+    @NotNull(message = "Available quantity is required")
+    @PositiveOrZero(message = "Available quantity cannot be negative")
     @Column(nullable = false)
     private Integer availableQuantity;
 
