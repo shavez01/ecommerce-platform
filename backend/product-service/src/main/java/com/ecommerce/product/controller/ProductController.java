@@ -6,6 +6,7 @@ import com.ecommerce.product.entity.Product;
 import com.ecommerce.product.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +28,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public Product getProductById(@PathVariable("id") String id) {
+    public Product getProductById(@PathVariable("id") @NonNull String id) {
         return productService.getProductById(id);
     }
 
