@@ -3,6 +3,8 @@ package com.ecommerce.monolith.product.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +25,7 @@ public class ProductController {
     // Create product
     @PostMapping
     public ResponseEntity<Product> createProduct(
-            @RequestBody Product product) {
+            @Valid @RequestBody Product product) {
 
         Product createdProduct = productService.createProduct(product);
 
@@ -52,7 +54,7 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
-            @RequestBody Product product) {
+            @Valid @RequestBody Product product) {
 
         return ResponseEntity.ok(
                 productService.updateProduct(id, product));

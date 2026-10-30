@@ -5,6 +5,11 @@ import java.math.BigDecimal;
 
 import jakarta.persistence.*;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.DecimalMin;
+
 @Entity
 @Table(name = "monolith_products")
 public class Product {
@@ -13,15 +18,26 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    @NotBlank(message = "Product name is required")
+    @Size(min = 2, max = 100,
+        message = "Product name must be between 2 and 100 characters")
     @Column(nullable = false)
     private String name;
 
+    @Size(max = 1000,
+        message = "Description cannot exceed 1000 characters")
     @Column(length = 1000)
     private String description;
 
+    @NotBlank(message = "SKU is required")
+    @Size(max = 100, message = "SKU cannot exceed 100 characters")
     @Column(nullable = false, unique = true)
     private String sku;
 
+    @NotNull(message = "Product price is required")
+    @DecimalMin(value = "0.01",
+            message = "Product price must be greater than zero")
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
