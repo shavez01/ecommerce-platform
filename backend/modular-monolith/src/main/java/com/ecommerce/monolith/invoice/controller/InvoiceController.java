@@ -3,6 +3,8 @@ package com.ecommerce.monolith.invoice.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +26,7 @@ public class InvoiceController {
     // Generate invoice
     @PostMapping
     public ResponseEntity<Invoice> generateInvoice(
-            @RequestBody InvoiceRequest request) {
+            @Valid @RequestBody InvoiceRequest request) {
 
         Invoice invoice = invoiceService.generateInvoice(request);
 

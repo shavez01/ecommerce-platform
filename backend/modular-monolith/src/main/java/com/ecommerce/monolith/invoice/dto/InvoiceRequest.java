@@ -1,8 +1,13 @@
 
 package com.ecommerce.monolith.invoice.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 public class InvoiceRequest {
 
+    @NotNull(message = "Order ID is required")
+    @Positive(message = "Order ID must be positive")
     private Long orderId;
 
     public InvoiceRequest() {
