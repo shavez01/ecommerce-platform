@@ -1,4 +1,3 @@
-
 # Maven build output
 **/target/
 
@@ -22,3 +21,9 @@ stdout
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# MySQL database files
+/infrastructure/data/mysql/
+
+# MongoDB database files
+/infrastructure/data/mongo/
