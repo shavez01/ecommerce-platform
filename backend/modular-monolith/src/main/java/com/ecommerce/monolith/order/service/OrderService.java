@@ -102,4 +102,20 @@ public class OrderService {
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
+
+    @Transactional
+    public Order markOrderAsPaid(Long orderId) {
+
+        Order order = getOrderById(orderId);
+
+        if (!"PLACED".equals(order.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only placed orders can be marked as paid");
+        }
+
+        order.setStatus("PAID");
+
+        return orderRepository.save(order);
+    }
 }
