@@ -47,21 +47,10 @@ public class OrderService {
     @Transactional
     public Order placeOrder(OrderRequest request) {
 
-        // 1. Validate request
-        if (request.getCustomerId() == null
-                || request.getProductId() == null
-                || request.getQuantity() == null
-                || request.getQuantity() <= 0) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid order request");
-        }
-
-        // 2. Validate customer
+        // 1. Validate customer
         Customer customer = customerService.getCustomerById(request.getCustomerId());
 
-        // 3. Validate product
+        // 2. Validate product
         Product product =
                 productService.getProductById(request.getProductId());
 
@@ -71,16 +60,16 @@ public class OrderService {
                     "Product is not available");
         }
 
-        // 4. Reduce inventory
+        // 3. Reduce inventory
         inventoryService.reduceStock(
                 request.getProductId(),
                 request.getQuantity());
 
-        // 5. Calculate total amount
+        // 4. Calculate total amount
         BigDecimal totalAmount = product.getPrice()
                 .multiply(BigDecimal.valueOf(request.getQuantity()));
 
-        // 6. Create order
+        // 5. Create order
         Order order = new Order();
 
         order.setCustomerId(request.getCustomerId());
@@ -90,7 +79,7 @@ public class OrderService {
         order.setStatus("PLACED");
         order.setCreatedAt(LocalDateTime.now());
 
-        // 7. Save order
+        // 6. Save order
         Order savedOrder = orderRepository.save(order);
 
         notificationService.recordNotification(

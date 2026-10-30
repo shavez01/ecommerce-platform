@@ -3,6 +3,8 @@ package com.ecommerce.monolith.order.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +26,7 @@ public class OrderController {
     // Place order
     @PostMapping
     public ResponseEntity<Order> placeOrder(
-            @RequestBody OrderRequest request) {
+            @Valid @RequestBody OrderRequest request) {
 
         Order order = orderService.placeOrder(request);
 
