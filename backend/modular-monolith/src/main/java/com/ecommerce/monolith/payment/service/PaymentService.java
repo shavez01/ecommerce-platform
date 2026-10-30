@@ -1,4 +1,3 @@
-
 package com.ecommerce.monolith.payment.service;
 
 import java.time.LocalDateTime;
@@ -10,8 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ecommerce.monolith.customer.entity.Customer;
+import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.service.OrderService;
+import com.ecommerce.monolith.notification.service.NotificationService;
 import com.ecommerce.monolith.payment.dto.PaymentRequest;
 import com.ecommerce.monolith.payment.entity.Payment;
 import com.ecommerce.monolith.payment.repository.PaymentRepository;
@@ -21,13 +23,19 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final OrderService orderService;
+    private final CustomerService customerService;
+    private final NotificationService notificationService;
 
     public PaymentService(
             PaymentRepository paymentRepository,
-            OrderService orderService) {
+            OrderService orderService,
+            CustomerService customerService,
+            NotificationService notificationService) {
 
         this.paymentRepository = paymentRepository;
         this.orderService = orderService;
+        this.customerService = customerService;
+        this.notificationService = notificationService;
     }
 
     // Process payment
@@ -75,6 +83,17 @@ public class PaymentService {
 
         // Update order status
         orderService.markOrderAsPaid(order.getId());
+
+        Customer customer =
+        customerService.getCustomerById(order.getCustomerId());
+
+        notificationService.recordNotification(
+            order.getId(),
+            "PAYMENT_SUCCESS",
+            customer.getEmail(),
+            "Payment Successful",
+            "Payment for order #" + order.getId()
+                    + " was successful.");
 
         return savedPayment;
     }

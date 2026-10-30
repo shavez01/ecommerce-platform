@@ -13,10 +13,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ecommerce.monolith.customer.entity.Customer;
+import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.service.OrderService;
 import com.ecommerce.monolith.payment.entity.Payment;
 import com.ecommerce.monolith.payment.service.PaymentService;
+import com.ecommerce.monolith.notification.service.NotificationService;
 import com.ecommerce.monolith.invoice.dto.InvoiceRequest;
 import com.ecommerce.monolith.invoice.entity.Invoice;
 import com.ecommerce.monolith.invoice.repository.InvoiceRepository;
@@ -29,15 +32,21 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final OrderService orderService;
     private final PaymentService paymentService;
+    private final CustomerService customerService;
+    private final NotificationService notificationService;
 
     public InvoiceService(
             InvoiceRepository invoiceRepository,
             OrderService orderService,
-            PaymentService paymentService) {
+            PaymentService paymentService,
+            CustomerService customerService,
+            NotificationService notificationService) {
 
         this.invoiceRepository = invoiceRepository;
         this.orderService = orderService;
         this.paymentService = paymentService;
+        this.customerService = customerService;
+        this.notificationService = notificationService;
     }
 
     // Generate invoice
@@ -102,7 +111,20 @@ public class InvoiceService {
         invoice.setTotalAmount(totalAmount);
         invoice.setCreatedAt(LocalDateTime.now());
 
-        return invoiceRepository.save(invoice);
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+
+        Customer customer =
+                customerService.getCustomerById(order.getCustomerId());
+
+        notificationService.recordNotification(
+                orderId,
+                "INVOICE_GENERATED",
+                customer.getEmail(),
+                "Invoice Generated",
+                "Invoice " + savedInvoice.getInvoiceNumber()
+                        + " has been generated for your order.");
+
+        return savedInvoice;
     }
 
     // Get invoice by ID

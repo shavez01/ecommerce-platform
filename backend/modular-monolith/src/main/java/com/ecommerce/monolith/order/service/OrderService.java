@@ -10,10 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.product.entity.Product;
 import com.ecommerce.monolith.product.service.ProductService;
 import com.ecommerce.monolith.inventory.service.InventoryService;
+import com.ecommerce.monolith.notification.service.NotificationService;
 import com.ecommerce.monolith.order.dto.OrderRequest;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.repository.OrderRepository;
@@ -25,17 +27,20 @@ public class OrderService {
     private final CustomerService customerService;
     private final ProductService productService;
     private final InventoryService inventoryService;
+    private final NotificationService notificationService;
 
     public OrderService(
             OrderRepository orderRepository,
             CustomerService customerService,
             ProductService productService,
-            InventoryService inventoryService) {
+            InventoryService inventoryService,
+            NotificationService notificationService) {
 
         this.orderRepository = orderRepository;
         this.customerService = customerService;
         this.productService = productService;
         this.inventoryService = inventoryService;
+        this.notificationService = notificationService;
     }
 
     // Place order
@@ -54,7 +59,7 @@ public class OrderService {
         }
 
         // 2. Validate customer
-        customerService.getCustomerById(request.getCustomerId());
+        Customer customer = customerService.getCustomerById(request.getCustomerId());
 
         // 3. Validate product
         Product product =
@@ -86,7 +91,17 @@ public class OrderService {
         order.setCreatedAt(LocalDateTime.now());
 
         // 7. Save order
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        notificationService.recordNotification(
+            savedOrder.getId(),
+            "ORDER_PLACED",
+            customer.getEmail(),
+            "Order Confirmation",
+            "Your order #" + savedOrder.getId()
+                    + " has been placed successfully.");
+
+        return savedOrder;
     }
 
     // Get order by ID
