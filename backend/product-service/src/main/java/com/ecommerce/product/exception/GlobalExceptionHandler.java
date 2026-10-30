@@ -1,5 +1,5 @@
 
-package com.ecommerce.customer.exception;
+package com.ecommerce.product.exception;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
