@@ -3,6 +3,8 @@ package com.ecommerce.product.service;
 import com.ecommerce.product.dto.ProductRequest;
 import com.ecommerce.product.entity.Product;
 import com.ecommerce.product.repository.ProductRepository;
+
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +22,7 @@ public class ProductService {
         return productRepository.findAll();
     }
 
-    public Product getProductById(String id) {
+    public Product getProductById(@NonNull String id) {
         return productRepository.findById(id)
                 .orElseThrow(() ->
                         new java.util.NoSuchElementException(
