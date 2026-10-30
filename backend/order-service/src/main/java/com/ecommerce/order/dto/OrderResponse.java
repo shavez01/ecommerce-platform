@@ -3,9 +3,10 @@ package com.ecommerce.order.dto;
 import java.math.BigDecimal;
 
 public record OrderResponse(
-        Long productId,
+        Long orderId,
+        String productId,
         String productName,
-        int quantity,
+        Integer quantity,
         BigDecimal totalPrice,
         String status
 ) {}

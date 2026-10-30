@@ -1,4 +1,4 @@
-package com.ecommerce.customer.exception;
+package com.ecommerce.order.exception;
 
 import java.time.Instant;
 import java.util.Map;

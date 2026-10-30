@@ -9,17 +9,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/api/inventory")
 public class InventoryController {
 
-    private final ConcurrentHashMap<Long, Integer> stock =
+    private final ConcurrentHashMap<String, Integer> stock =
             new ConcurrentHashMap<>();
 
     public InventoryController() {
-        stock.put(1L, 10);
-        stock.put(2L, 20);
-        stock.put(3L, 5);
+        stock.put("6ae4339490ed4ef5709aa761", 10);
     }
 
     @GetMapping("/{productId}")
-    public Integer getStock(@PathVariable("productId") Long productId) {
+    public Integer getStock(@PathVariable("productId") String productId) {
         Integer quantity = stock.get(productId);
 
         if (quantity == null) {
@@ -32,7 +30,7 @@ public class InventoryController {
     @PostMapping("/{productId}/reserve")
     @ResponseStatus(HttpStatus.OK)
     public Integer reserveStock(
-            @PathVariable("productId") Long productId,
+            @PathVariable("productId") String productId,
             @RequestParam("quantity") int quantity) {
 
         if (quantity <= 0) {
