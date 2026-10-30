@@ -5,6 +5,7 @@ import com.ecommerce.order.dto.OrderResponse;
 import com.ecommerce.order.entity.Order;
 import com.ecommerce.order.repository.OrderRepository;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -104,7 +105,7 @@ public class OrderService {
         return orderRepository.findAll();
     }
 
-    public Order getOrderById(Long id) {
+    public Order getOrderById(@NonNull Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() ->
                         new java.util.NoSuchElementException(

@@ -7,6 +7,7 @@ import com.ecommerce.order.service.OrderService;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public Order getOrderById(@PathVariable("id") Long id) {
+    public Order getOrderById(@PathVariable("id") @NonNull Long id) {
         return orderService.getOrderById(id);
     }
 }
