@@ -2,6 +2,8 @@ package com.ecommerce.monolith.customer.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +24,7 @@ public class CustomerController {
     // Create customer
     @PostMapping
     public ResponseEntity<Customer> createCustomer(
-            @RequestBody Customer customer) {
+            @Valid @RequestBody Customer customer) {
 
         Customer createdCustomer =
                 customerService.createCustomer(customer);
