@@ -103,6 +103,18 @@ public class GlobalExceptionHandler {
                 request.getRequestURI());
     }
 
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+        public ResponseEntity<ApiError> handleAuthorizationDenied(
+                org.springframework.security.authorization.AuthorizationDeniedException ex,
+                HttpServletRequest request) {
+
+                return buildResponse(
+                        HttpStatus.FORBIDDEN,
+                        "You do not have permission to access this resource",
+                        request.getRequestURI()
+                );
+        }
+
 
     private ResponseEntity<ApiError> buildResponse(
             HttpStatus status,

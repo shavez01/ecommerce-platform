@@ -7,10 +7,13 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.ecommerce.monolith.product.entity.Product;
 import com.ecommerce.monolith.product.service.ProductService;
+
+
 
 @RestController
 @RequestMapping("/api/products")
@@ -24,6 +27,7 @@ public class ProductController {
 
     // Create product
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Product> createProduct(
             @Valid @RequestBody Product product) {
 
@@ -35,6 +39,7 @@ public class ProductController {
 
     // Get product by ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
     public ResponseEntity<Product> getProductById(
             @PathVariable Long id) {
 
@@ -44,6 +49,7 @@ public class ProductController {
 
     // Get all products
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
     public ResponseEntity<List<Product>> getAllProducts() {
 
         return ResponseEntity.ok(
@@ -52,6 +58,7 @@ public class ProductController {
 
     // Update product
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody Product product) {
@@ -62,6 +69,7 @@ public class ProductController {
 
     // Delete product
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteProduct(
             @PathVariable Long id) {
 
