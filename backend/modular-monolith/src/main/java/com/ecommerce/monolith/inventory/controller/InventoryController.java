@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.ecommerce.monolith.inventory.entity.Inventory;
@@ -27,6 +28,7 @@ public class InventoryController {
 
     // Create inventory
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Inventory> createInventory(
             @Valid @RequestBody Inventory inventory) {
 
@@ -39,6 +41,7 @@ public class InventoryController {
 
     // Get all inventory
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
     public ResponseEntity<List<Inventory>> getAllInventory() {
 
         return ResponseEntity.ok(
@@ -47,6 +50,7 @@ public class InventoryController {
 
     // Get inventory by product ID
     @GetMapping("/{productId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
     public ResponseEntity<Inventory> getInventoryByProductId(
             @PathVariable Long productId) {
 
@@ -56,6 +60,7 @@ public class InventoryController {
 
     // Add stock
     @PatchMapping("/{productId}/add")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Inventory> addStock(
             @PathVariable @Positive(message = "Product ID must be positive") 
             Long productId,
@@ -69,11 +74,13 @@ public class InventoryController {
 
     // Reduce stock
     @PatchMapping("/{productId}/reduce")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Inventory> reduceStock(
             @PathVariable @Positive(message = "Product ID must be positive")
             Long productId,
 
-            @RequestParam @Positive(message = "Quantity must be greater than zero") Integer quantity) {
+            @RequestParam @Positive(message = "Quantity must be greater than zero")
+            Integer quantity) {
 
         return ResponseEntity.ok(
                 inventoryService.reduceStock(productId, quantity));
