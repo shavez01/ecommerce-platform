@@ -16,6 +16,8 @@ public class PaymentRequest {
     @Size(max = 30, message = "Payment method cannot exceed 30 characters")
     private String paymentMethod;
 
+    private boolean simulateFailure;
+
     public PaymentRequest() {
     }
 
@@ -33,5 +35,13 @@ public class PaymentRequest {
 
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public boolean isSimulateFailure() {
+        return simulateFailure;
+    }
+
+    public void setSimulateFailure(boolean simulateFailure) {
+        this.simulateFailure = simulateFailure;
     }
 }

@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,7 @@ import com.ecommerce.monolith.customer.dto.CustomerResponse;
 // import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.kafka.event.PaymentSuccessEvent;
+import com.ecommerce.monolith.kafka.event.PaymentFailedEvent;
 import com.ecommerce.monolith.kafka.producer.PaymentEventProducer;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.service.OrderService;
@@ -23,8 +27,13 @@ import com.ecommerce.monolith.payment.dto.PaymentRequest;
 import com.ecommerce.monolith.payment.entity.Payment;
 import com.ecommerce.monolith.payment.repository.PaymentRepository;
 
+
+
 @Service
 public class PaymentService {
+
+    private static final Logger log =
+        LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository paymentRepository;
     private final OrderService orderService;
@@ -81,27 +90,110 @@ public class PaymentService {
         payment.setOrderId(order.getId());
         payment.setAmount(order.getTotalAmount());
         payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setStatus("SUCCESS");
+
         payment.setTransactionReference(
                 "TXN-" + UUID.randomUUID());
+
         payment.setCreatedAt(LocalDateTime.now());
 
-        // Save payment
+        // Simulate payment failure when requested
+        if (request.isSimulateFailure()) {
+
+            payment.setStatus("FAILED");
+
+            Payment savedPayment = paymentRepository.save(payment);
+
+            PaymentFailedEvent event = new PaymentFailedEvent(
+                    savedPayment.getId(),
+                    savedPayment.getOrderId(),
+                    savedPayment.getAmount(),
+                    savedPayment.getPaymentMethod(),
+                    savedPayment.getTransactionReference(),
+                    "Simulated payment failure",
+                    savedPayment.getCreatedAt()
+            );
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+
+                        @Override
+                        public void afterCommit() {
+
+                            paymentEventProducer.publishPaymentFailed(event)
+                                    .whenComplete((result, exception) -> {
+
+                                        if (exception != null) {
+                                            log.error(
+                                                    "Failed to publish PaymentFailedEvent for order: {}",
+                                                    event.orderId(),
+                                                    exception
+                                            );
+                                        } else {
+                                            log.info(
+                                                    "PaymentFailedEvent published successfully for order: {}",
+                                                    event.orderId()
+                                            );
+                                        }
+                                    });
+                        }
+                    }
+            );
+
+            return savedPayment;
+        }
+
+        // Normal successful payment
+        payment.setStatus("SUCCESS");
+
         Payment savedPayment = paymentRepository.save(payment);
 
-        // Update order status
         orderService.markOrderAsPaid(order.getId());
 
+        PaymentSuccessEvent event = new PaymentSuccessEvent(
+                savedPayment.getId(),
+                savedPayment.getOrderId(),
+                savedPayment.getAmount(),
+                savedPayment.getPaymentMethod(),
+                savedPayment.getTransactionReference(),
+                savedPayment.getCreatedAt()
+        );
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+
+                        paymentEventProducer.publishPaymentSuccess(event)
+                                .whenComplete((result, exception) -> {
+
+                                    if (exception != null) {
+                                        log.error(
+                                                "Failed to publish PaymentSuccessEvent for order: {}",
+                                                event.orderId(),
+                                                exception
+                                        );
+                                    } else {
+                                        log.info(
+                                                "PaymentSuccessEvent published successfully for order: {}",
+                                                event.orderId()
+                                        );
+                                    }
+                                });
+                    }
+                }
+        );
+
         CustomerResponse customer =
-        customerService.getCustomerById(order.getCustomerId());
+                customerService.getCustomerById(order.getCustomerId());
 
         notificationService.recordNotification(
-            order.getId(),
-            "PAYMENT_SUCCESS",
-            customer.getEmail(),
-            "Payment Successful",
-            "Payment for order #" + order.getId()
-                    + " was successful.");
+                order.getId(),
+                "PAYMENT_SUCCESS",
+                customer.getEmail(),
+                "Payment Successful",
+                "Payment for order #" + order.getId()
+                        + " was successful.");
 
         return savedPayment;
     }

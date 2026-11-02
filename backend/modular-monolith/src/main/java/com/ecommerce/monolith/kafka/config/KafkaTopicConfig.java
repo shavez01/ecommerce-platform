@@ -11,6 +11,7 @@ public class KafkaTopicConfig {
 
     public static final String ORDER_PLACED_TOPIC = "order-placed";
     public static final String PAYMENT_SUCCESS_TOPIC = "payment-success";
+    public static final String PAYMENT_FAILED_TOPIC = "payment-failed";
 
     @Bean
     public NewTopic orderPlacedTopic() {
@@ -23,6 +24,14 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic paymentSuccessTopic() {
         return TopicBuilder.name(PAYMENT_SUCCESS_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic paymentFailedTopic() {
+        return TopicBuilder.name(PAYMENT_FAILED_TOPIC)
                 .partitions(3)
                 .replicas(1)
                 .build();
