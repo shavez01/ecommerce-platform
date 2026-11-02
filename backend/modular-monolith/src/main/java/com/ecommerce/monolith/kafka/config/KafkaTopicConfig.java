@@ -12,6 +12,7 @@ public class KafkaTopicConfig {
     public static final String ORDER_PLACED_TOPIC = "order-placed";
     public static final String PAYMENT_SUCCESS_TOPIC = "payment-success";
     public static final String PAYMENT_FAILED_TOPIC = "payment-failed";
+    public static final String PAYMENT_FAILED_DLT_TOPIC = "payment-failed-dlt";
 
     @Bean
     public NewTopic orderPlacedTopic() {

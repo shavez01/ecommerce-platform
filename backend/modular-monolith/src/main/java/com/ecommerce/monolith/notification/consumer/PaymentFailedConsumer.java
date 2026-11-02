@@ -37,10 +37,13 @@ public class PaymentFailedConsumer {
     @KafkaListener(
         topics = KafkaTopicConfig.PAYMENT_FAILED_TOPIC,
         groupId = "payment-failed-notification-group",
+        containerFactory = "paymentFailedKafkaListenerContainerFactory",
         properties = {
             "spring.json.value.default.type=com.ecommerce.monolith.kafka.event.PaymentFailedEvent"
         }
     )
+
+
     public void consumePaymentFailed(PaymentFailedEvent event) {
 
         log.info("Payment failure event received for order: {}", event.orderId());
