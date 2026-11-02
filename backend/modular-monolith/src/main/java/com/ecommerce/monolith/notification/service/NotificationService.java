@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ecommerce.monolith.kafka.event.OrderPlacedEvent;
 import com.ecommerce.monolith.notification.entity.Notification;
 import com.ecommerce.monolith.notification.repository.NotificationRepository;
 
@@ -61,5 +62,26 @@ public class NotificationService {
 
         return notificationRepository
                 .findByOrderIdOrderByCreatedAtDesc(orderId);
+    }
+
+    // Process Order Placed Kafka Event
+    public void processOrderPlacedEvent(OrderPlacedEvent event) {
+
+        String recipientEmail = "customer-" + event.customerId();
+
+        String subject = "Order Confirmation - #" + event.orderId();
+
+        String message = "Your order has been successfully placed. "
+                + "Order ID: " + event.orderId()
+                + ", Total Amount: " + event.totalAmount()
+                + ", Order Date: " + event.orderDate();
+
+        recordNotification(
+                event.orderId(),
+                "ORDER_CONFIRMATION",
+                recipientEmail,
+                subject,
+                message
+        );
     }
 }

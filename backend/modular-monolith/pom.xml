@@ -64,6 +64,12 @@
             <version>2.10.0</version>
         </dependency>
 
+        <!-- Apache Kafka Integration -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -5,14 +5,21 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.ecommerce.monolith.customer.dto.CustomerResponse;
 // import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
+import com.ecommerce.monolith.kafka.event.OrderPlacedEvent;
+import com.ecommerce.monolith.kafka.producer.OrderEventProducer;
 import com.ecommerce.monolith.product.entity.Product;
 import com.ecommerce.monolith.product.service.ProductService;
 import com.ecommerce.monolith.inventory.service.InventoryService;
@@ -24,10 +31,14 @@ import com.ecommerce.monolith.order.repository.OrderRepository;
 @Service
 public class OrderService {
 
+    private static final Logger log =
+        LoggerFactory.getLogger(OrderService.class);
+
     private final OrderRepository orderRepository;
     private final CustomerService customerService;
     private final ProductService productService;
     private final InventoryService inventoryService;
+    private final OrderEventProducer orderEventProducer;
     private final NotificationService notificationService;
 
     public OrderService(
@@ -35,12 +46,14 @@ public class OrderService {
             CustomerService customerService,
             ProductService productService,
             InventoryService inventoryService,
+            OrderEventProducer orderEventProducer,
             NotificationService notificationService) {
 
         this.orderRepository = orderRepository;
         this.customerService = customerService;
         this.productService = productService;
         this.inventoryService = inventoryService;
+        this.orderEventProducer = orderEventProducer;
         this.notificationService = notificationService;
     }
 
@@ -83,13 +96,49 @@ public class OrderService {
         // 6. Save order
         Order savedOrder = orderRepository.save(order);
 
-        notificationService.recordNotification(
-            savedOrder.getId(),
-            "ORDER_PLACED",
-            customer.getEmail(),
-            "Order Confirmation",
-            "Your order #" + savedOrder.getId()
-                    + " has been placed successfully.");
+        // notificationService.recordNotification(
+        //     savedOrder.getId(),
+        //     "ORDER_PLACED",
+        //     customer.getEmail(),
+        //     "Order Confirmation",
+        //     "Your order #" + savedOrder.getId()
+        //             + " has been placed successfully.");
+
+        // Prepare the event
+        OrderPlacedEvent event = new OrderPlacedEvent(
+                savedOrder.getId(),
+                savedOrder.getCustomerId(),
+                savedOrder.getTotalAmount(),
+                savedOrder.getCreatedAt()
+        );
+
+        // Publish event only after database transaction commits
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+
+                        orderEventProducer.publishOrderPlacedEvent(event)
+                                .whenComplete((result, exception) -> {
+
+                                    if (exception != null) {
+                                        log.error(
+                                                "Failed to publish OrderPlacedEvent for orderId: {}",
+                                                event.orderId(),
+                                                exception
+                                        );
+                                    } else {
+                                        log.info(
+                                                "OrderPlacedEvent published successfully. OrderId: {}",
+                                                event.orderId()
+                                        );
+                                    }
+                                });
+                    }
+                }
+        );
+
 
         return savedOrder;
     }

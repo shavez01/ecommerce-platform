@@ -1,0 +1,10 @@
+
+services:
+  kafka:
+    image: apache/kafka:4.4.0
+    container_name: ecommerce-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms256M -Xmx512M"
+    restart: unless-stopped
