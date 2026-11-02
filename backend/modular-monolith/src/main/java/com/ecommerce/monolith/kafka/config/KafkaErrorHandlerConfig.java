@@ -1,8 +1,6 @@
 
 package com.ecommerce.monolith.kafka.config;
 
-import java.time.Duration;
-
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
