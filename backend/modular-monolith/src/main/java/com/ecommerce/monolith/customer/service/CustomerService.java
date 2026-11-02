@@ -83,4 +83,15 @@ public class CustomerService {
                 customer.getPhone()
         );
     }
+
+    public String getCustomerEmailById(Long id) {
+
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Customer not found with ID: " + id));
+
+        return customer.getEmail();
+    }    
+
 }

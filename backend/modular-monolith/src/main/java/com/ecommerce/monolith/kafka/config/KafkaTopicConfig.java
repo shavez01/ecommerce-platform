@@ -10,10 +10,19 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaTopicConfig {
 
     public static final String ORDER_PLACED_TOPIC = "order-placed";
+    public static final String PAYMENT_SUCCESS_TOPIC = "payment-success";
 
     @Bean
     public NewTopic orderPlacedTopic() {
         return TopicBuilder.name(ORDER_PLACED_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic paymentSuccessTopic() {
+        return TopicBuilder.name(PAYMENT_SUCCESS_TOPIC)
                 .partitions(3)
                 .replicas(1)
                 .build();

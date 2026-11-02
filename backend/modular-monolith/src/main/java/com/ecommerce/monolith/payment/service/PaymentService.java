@@ -7,11 +7,15 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.ecommerce.monolith.customer.dto.CustomerResponse;
 // import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
+import com.ecommerce.monolith.kafka.event.PaymentSuccessEvent;
+import com.ecommerce.monolith.kafka.producer.PaymentEventProducer;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.service.OrderService;
 import com.ecommerce.monolith.notification.service.NotificationService;
@@ -26,17 +30,20 @@ public class PaymentService {
     private final OrderService orderService;
     private final CustomerService customerService;
     private final NotificationService notificationService;
+    private final PaymentEventProducer paymentEventProducer;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             OrderService orderService,
             CustomerService customerService,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            PaymentEventProducer paymentEventProducer) {
 
         this.paymentRepository = paymentRepository;
         this.orderService = orderService;
         this.customerService = customerService;
         this.notificationService = notificationService;
+        this.paymentEventProducer = paymentEventProducer;
     }
 
     // Process payment
