@@ -3,10 +3,19 @@ package com.ecommerce.monolith.notification.entity;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "monolith_notifications")
+@Table(
+    name = "monolith_notifications",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_notification_order_type",
+            columnNames = {"order_id", "notification_type"}
+        )
+    }
+)
 public class Notification {
 
     @Id

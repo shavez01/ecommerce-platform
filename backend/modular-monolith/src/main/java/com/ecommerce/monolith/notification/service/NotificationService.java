@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.kafka.event.OrderPlacedEvent;
@@ -28,23 +29,39 @@ public class NotificationService {
 
     // Record notification
     public Notification recordNotification(
-            Long orderId,
-            String notificationType,
-            String recipientEmail,
-            String subject,
-            String message) {
+        Long orderId,
+        String notificationType,
+        String recipientEmail,
+        String subject,
+        String message) {
 
-        Notification notification = new Notification();
+        // Return existing notification if this event was already processed
+        return notificationRepository
+                .findByOrderIdAndNotificationType(orderId, notificationType)
+                .orElseGet(() -> {
 
-        notification.setOrderId(orderId);
-        notification.setNotificationType(notificationType);
-        notification.setRecipientEmail(recipientEmail);
-        notification.setSubject(subject);
-        notification.setMessage(message);
-        notification.setDeliveryStatus("SIMULATED");
-        notification.setCreatedAt(LocalDateTime.now());
+                    Notification notification = new Notification();
 
-        return notificationRepository.save(notification);
+                    notification.setOrderId(orderId);
+                    notification.setNotificationType(notificationType);
+                    notification.setRecipientEmail(recipientEmail);
+                    notification.setSubject(subject);
+                    notification.setMessage(message);
+                    notification.setDeliveryStatus("SIMULATED");
+                    notification.setCreatedAt(LocalDateTime.now());
+
+                    try {
+                        return notificationRepository.saveAndFlush(notification);
+
+                    } catch (DataIntegrityViolationException exception) {
+
+                        // Another consumer may have inserted the same notification
+                        return notificationRepository
+                                .findByOrderIdAndNotificationType(
+                                        orderId, notificationType)
+                                .orElseThrow(() -> exception);
+                    }
+                });
     }
 
     // Get notification by ID
