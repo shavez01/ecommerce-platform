@@ -3,6 +3,8 @@ package com.ecommerce.monolith.product.service;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +22,7 @@ public class ProductService {
     }
 
     // Create product
+    @CacheEvict(cacheNames = {"productById", "products"}, allEntries = true)
     public Product createProduct(Product product) {
 
         if (productRepository.existsBySku(product.getSku())) {
@@ -30,7 +33,8 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    // Get product by ID
+    // Get product by ID - Redis cache
+    @Cacheable(cacheNames = "productById", key = "#id")
     public Product getProductById(Long id) {
 
         return productRepository.findById(id)
@@ -39,12 +43,14 @@ public class ProductService {
                         "Product not found with ID: " + id));
     }
 
-    // Get all products
+    // Get all products - Redis cache
+    @Cacheable(cacheNames = "products")
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
     // Update product
+    @CacheEvict(cacheNames = {"productById", "products"}, allEntries = true)
     public Product updateProduct(Long id, Product updatedProduct) {
 
         Product existingProduct = getProductById(id);
@@ -66,6 +72,7 @@ public class ProductService {
     }
 
     // Delete product
+    @CacheEvict(cacheNames = {"productById", "products"}, allEntries = true)
     public void deleteProduct(Long id) {
 
         Product product = getProductById(id);
