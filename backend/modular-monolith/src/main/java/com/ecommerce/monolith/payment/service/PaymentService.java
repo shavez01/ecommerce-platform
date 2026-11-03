@@ -11,8 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.ecommerce.monolith.common.outbox.service.OutboxService;
@@ -42,7 +40,6 @@ public class PaymentService {
     private final OrderService orderService;
     private final CustomerService customerService;
     private final NotificationService notificationService;
-    private final PaymentEventProducer paymentEventProducer;
     private final PaymentGateway paymentGateway;
     private final OutboxService outboxService;
 
@@ -59,7 +56,6 @@ public class PaymentService {
         this.orderService = orderService;
         this.customerService = customerService;
         this.notificationService = notificationService;
-        this.paymentEventProducer = paymentEventProducer;
         this.paymentGateway = paymentGateway;
         this.outboxService = outboxService;
     }
@@ -67,6 +63,8 @@ public class PaymentService {
     // Process payment
     @Transactional
     public Payment processPayment(PaymentRequest request, String idempotencyKey) {
+
+        log.info("Received Idempotency-Key: {}", idempotencyKey);
 
         // 1. Validate Idempotency-Key
         if (idempotencyKey == null || idempotencyKey.isBlank()
