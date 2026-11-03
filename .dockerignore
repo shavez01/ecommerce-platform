@@ -1,0 +1,9 @@
+
+**/target
+.git
+.classpath
+.project
+.settings
+.idea
+*.iml
+infrastructure/data/mysql/
