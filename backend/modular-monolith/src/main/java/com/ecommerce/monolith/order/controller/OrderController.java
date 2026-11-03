@@ -13,6 +13,8 @@ import com.ecommerce.monolith.order.dto.OrderRequest;
 import com.ecommerce.monolith.order.entity.Order;
 import com.ecommerce.monolith.order.service.OrderService;
 
+
+
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -26,12 +28,12 @@ public class OrderController {
     // Place order
     @PostMapping
     public ResponseEntity<Order> placeOrder(
-            @Valid @RequestBody OrderRequest request) {
+            @Valid @RequestBody OrderRequest request,
+            @RequestHeader("Idempotency-Key") String idempotencyKey) {
 
-        Order order = orderService.placeOrder(request);
+        Order order = orderService.placeOrder(request, idempotencyKey);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(order);
+        return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
     // Get order by ID

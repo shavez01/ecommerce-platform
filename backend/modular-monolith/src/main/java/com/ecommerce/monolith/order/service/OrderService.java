@@ -4,6 +4,7 @@ package com.ecommerce.monolith.order.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.server.ResponseStatusException;
 
 import com.ecommerce.monolith.customer.dto.CustomerResponse;
-// import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
 import com.ecommerce.monolith.kafka.event.OrderPlacedEvent;
 import com.ecommerce.monolith.kafka.producer.OrderEventProducer;
@@ -59,31 +59,60 @@ public class OrderService {
 
     // Place order
     @Transactional
-    public Order placeOrder(OrderRequest request) {
+    public Order placeOrder(OrderRequest request, String idempotencyKey) {
 
-        // 1. Validate customer
-        CustomerResponse customer = customerService.getCustomerById(request.getCustomerId());
+        log.info("Received Idempotency-Key: {}", idempotencyKey);
 
-        // 2. Validate product
+        // 1. Validate Idempotency-Key
+        if (idempotencyKey == null || idempotencyKey.isBlank()
+                || idempotencyKey.length() > 100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Invalid Idempotency-Key");
+        }
+
+        // 2. Check whether this request was already processed
+        Optional<Order> existingOrder =
+                orderRepository.findByIdempotencyKey(idempotencyKey);
+
+        if (existingOrder.isPresent()) {
+            Order order = existingOrder.get();
+
+            // Ensure the same key is not reused for different order details
+            if (!order.getCustomerId().equals(request.getCustomerId())
+                    || !order.getProductId().equals(request.getProductId())
+                    || !order.getQuantity().equals(request.getQuantity())) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Idempotency key already used with different order details");
+            }
+
+            return order;
+        }
+
+        // 3. Validate customer
+        CustomerResponse customer =
+                customerService.getCustomerById(request.getCustomerId());
+
+        // 4. Validate product
         Product product =
                 productService.getProductById(request.getProductId());
 
         if (!product.isActive()) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Product is not available");
+                    HttpStatus.CONFLICT, "Product is not available");
         }
 
-        // 3. Reduce inventory
+        // 5. Reduce inventory
         inventoryService.reduceStock(
                 request.getProductId(),
                 request.getQuantity());
 
-        // 4. Calculate total amount
+        // 6. Calculate total amount
         BigDecimal totalAmount = product.getPrice()
                 .multiply(BigDecimal.valueOf(request.getQuantity()));
 
-        // 5. Create order
+        // 7. Create order
         Order order = new Order();
 
         order.setCustomerId(request.getCustomerId());
@@ -92,19 +121,16 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
         order.setStatus("PLACED");
         order.setCreatedAt(LocalDateTime.now());
+        order.setIdempotencyKey(idempotencyKey);
 
-        // 6. Save order
+        log.info("Order entity BEFORE SAVE: {}", order.getIdempotencyKey());
+
+        // 8. Save order
         Order savedOrder = orderRepository.save(order);
 
-        // notificationService.recordNotification(
-        //     savedOrder.getId(),
-        //     "ORDER_PLACED",
-        //     customer.getEmail(),
-        //     "Order Confirmation",
-        //     "Your order #" + savedOrder.getId()
-        //             + " has been placed successfully.");
+        log.info("Order entity AFTER SAVE: {}", savedOrder.getIdempotencyKey());
 
-        // Prepare the event
+        // 9. Prepare event
         OrderPlacedEvent event = new OrderPlacedEvent(
                 savedOrder.getId(),
                 savedOrder.getCustomerId(),
@@ -112,7 +138,7 @@ public class OrderService {
                 savedOrder.getCreatedAt()
         );
 
-        // Publish event only after database transaction commits
+        // 10. Publish event only after transaction commits
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
 
@@ -139,9 +165,9 @@ public class OrderService {
                 }
         );
 
-
         return savedOrder;
     }
+
 
     // Get order by ID
     public Order getOrderById(Long id) {

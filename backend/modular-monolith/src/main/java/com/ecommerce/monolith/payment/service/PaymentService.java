@@ -2,6 +2,7 @@ package com.ecommerce.monolith.payment.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -61,7 +62,31 @@ public class PaymentService {
 
     // Process payment
     @Transactional
-    public Payment processPayment(PaymentRequest request) {
+    public Payment processPayment(PaymentRequest request, String idempotencyKey) {
+
+        // 1. Validate Idempotency-Key
+        if (idempotencyKey == null || idempotencyKey.isBlank()
+                || idempotencyKey.length() > 100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Invalid Idempotency-Key");
+        }
+
+        // 2. Check for an existing payment
+        Optional<Payment> existingPayment =
+                paymentRepository.findByIdempotencyKey(idempotencyKey);
+
+        if (existingPayment.isPresent()) {
+            Payment payment = existingPayment.get();
+
+            if (!payment.getOrderId().equals(request.getOrderId())
+                    || !payment.getPaymentMethod().equals(request.getPaymentMethod())) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Idempotency key already used with different payment details");
+            }
+
+            return payment;
+        }
 
         if (request.getOrderId() == null
                 || request.getPaymentMethod() == null
@@ -94,6 +119,7 @@ public class PaymentService {
         payment.setOrderId(order.getId());
         payment.setAmount(order.getTotalAmount());
         payment.setPaymentMethod(request.getPaymentMethod());
+        payment.setIdempotencyKey(idempotencyKey);
 
         payment.setTransactionReference(
                 "TXN-" + UUID.randomUUID());

@@ -26,12 +26,13 @@ public class PaymentController {
     // Process payment
     @PostMapping
     public ResponseEntity<Payment> processPayment(
-            @Valid @RequestBody PaymentRequest request) {
+            @Valid @RequestBody PaymentRequest request,
+            @RequestHeader("Idempotency-Key") String idempotencyKey) {
 
-        Payment payment = paymentService.processPayment(request);
+        Payment payment =
+                paymentService.processPayment(request, idempotencyKey);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(payment);
+        return ResponseEntity.status(HttpStatus.CREATED).body(payment);
     }
 
     // Get payment by ID
