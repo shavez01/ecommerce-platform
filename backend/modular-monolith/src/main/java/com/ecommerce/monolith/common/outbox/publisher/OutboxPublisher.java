@@ -1,7 +1,6 @@
 
 package com.ecommerce.monolith.common.outbox.publisher;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -10,11 +9,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ecommerce.monolith.common.outbox.entity.OutboxEvent;
-import com.ecommerce.monolith.common.outbox.repository.OutboxRepository;
+import com.ecommerce.monolith.common.outbox.service.OutboxService;
 import com.ecommerce.monolith.kafka.event.OrderPlacedEvent;
 import com.ecommerce.monolith.kafka.event.PaymentFailedEvent;
 import com.ecommerce.monolith.kafka.event.PaymentSuccessEvent;
@@ -25,16 +23,16 @@ public class OutboxPublisher {
     private static final Logger log =
             LoggerFactory.getLogger(OutboxPublisher.class);
 
-    private final OutboxRepository outboxRepository;
+    private final OutboxService outboxService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
     public OutboxPublisher(
-            OutboxRepository outboxRepository,
+            OutboxService outboxService,
             KafkaTemplate<String, Object> kafkaTemplate,
             ObjectMapper objectMapper) {
 
-        this.outboxRepository = outboxRepository;
+        this.outboxService = outboxService;
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
     }
@@ -43,16 +41,14 @@ public class OutboxPublisher {
     public void publishPendingEvents() {
 
         List<OutboxEvent> events =
-                outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(
-                        "PENDING");
+                outboxService.claimPendingEvents();
 
         for (OutboxEvent event : events) {
             publishEvent(event);
         }
     }
 
-    @Transactional
-    public void publishEvent(OutboxEvent event) {
+    private void publishEvent(OutboxEvent event) {
 
         try {
             Object payload = deserializeEvent(event);
@@ -63,23 +59,30 @@ public class OutboxPublisher {
                     payload
             ).get(10, TimeUnit.SECONDS);
 
-            event.setStatus("PUBLISHED");
-            event.setPublishedAt(LocalDateTime.now());
-            event.setLastError(null);
+            outboxService.markPublished(event.getId());
 
-            outboxRepository.save(event);
+            log.info(
+                    "Outbox event published. ID: {}, Type: {}",
+                    event.getId(),
+                    event.getEventType()
+            );
 
-            log.info("Outbox event published. ID: {}, Type: {}",
-                    event.getId(), event.getEventType());
+        } catch (InterruptedException exception) {
+
+            Thread.currentThread().interrupt();
+
+            outboxService.markFailed(
+                    event.getId(), "Publishing interrupted");
+
+            log.error("Outbox publishing interrupted. ID: {}",
+                    event.getId(), exception);
 
         } catch (Exception exception) {
 
-            event.setRetryCount(event.getRetryCount() + 1);
-            event.setLastError(exception.getMessage());
+            outboxService.markFailed(
+                    event.getId(), exception.getMessage());
 
-            outboxRepository.save(event);
-
-            log.error("Outbox event publishing failed. ID: {}",
+            log.error("Outbox publishing failed. ID: {}",
                     event.getId(), exception);
         }
     }
@@ -91,15 +94,18 @@ public class OutboxPublisher {
 
             case "ORDER_PLACED" ->
                     objectMapper.readValue(
-                            event.getPayload(), OrderPlacedEvent.class);
+                            event.getPayload(),
+                            OrderPlacedEvent.class);
 
             case "PAYMENT_SUCCESS" ->
                     objectMapper.readValue(
-                            event.getPayload(), PaymentSuccessEvent.class);
+                            event.getPayload(),
+                            PaymentSuccessEvent.class);
 
             case "PAYMENT_FAILED" ->
                     objectMapper.readValue(
-                            event.getPayload(), PaymentFailedEvent.class);
+                            event.getPayload(),
+                            PaymentFailedEvent.class);
 
             default -> throw new IllegalArgumentException(
                     "Unsupported event type: " + event.getEventType());

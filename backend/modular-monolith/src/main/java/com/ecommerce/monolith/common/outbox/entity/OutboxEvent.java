@@ -43,6 +43,9 @@ public class OutboxEvent {
 
     private LocalDateTime publishedAt;
 
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @Column(length = 1000)
     private String lastError;
 
@@ -120,5 +123,13 @@ public class OutboxEvent {
 
     public void setLastError(String lastError) {
         this.lastError = lastError;
+    }
+
+    public LocalDateTime getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
     }
 }
