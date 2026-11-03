@@ -1,0 +1,25 @@
+
+# Build stage
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+
+WORKDIR /workspace
+
+ARG SERVICE
+
+COPY . .
+
+RUN mvn -f backend/${SERVICE}/pom.xml \
+    clean package spring-boot:repackage -DskipTests
+
+# Runtime stage
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+ARG SERVICE
+
+COPY --from=build \
+    /workspace/backend/${SERVICE}/target/${SERVICE}-1.0.0-SNAPSHOT.jar \
+    app.jar
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

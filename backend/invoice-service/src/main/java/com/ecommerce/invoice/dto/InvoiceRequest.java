@@ -9,6 +9,6 @@ import java.math.BigDecimal;
 public record InvoiceRequest(
         @NotBlank String orderId,
         @NotBlank String productName,
-        @Positive int quantity,
+        @NotNull @Positive Integer quantity,
         @NotNull @Positive BigDecimal totalAmount
 ) {}
