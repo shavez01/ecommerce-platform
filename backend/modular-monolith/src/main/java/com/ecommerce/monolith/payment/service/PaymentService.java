@@ -25,6 +25,7 @@ import com.ecommerce.monolith.order.service.OrderService;
 import com.ecommerce.monolith.notification.service.NotificationService;
 import com.ecommerce.monolith.payment.dto.PaymentRequest;
 import com.ecommerce.monolith.payment.entity.Payment;
+import com.ecommerce.monolith.payment.gateway.PaymentGateway;
 import com.ecommerce.monolith.payment.repository.PaymentRepository;
 
 
@@ -40,19 +41,22 @@ public class PaymentService {
     private final CustomerService customerService;
     private final NotificationService notificationService;
     private final PaymentEventProducer paymentEventProducer;
+    private final PaymentGateway paymentGateway;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             OrderService orderService,
             CustomerService customerService,
             NotificationService notificationService,
-            PaymentEventProducer paymentEventProducer) {
+            PaymentEventProducer paymentEventProducer,
+            PaymentGateway paymentGateway) {
 
         this.paymentRepository = paymentRepository;
         this.orderService = orderService;
         this.customerService = customerService;
         this.notificationService = notificationService;
         this.paymentEventProducer = paymentEventProducer;
+        this.paymentGateway = paymentGateway;
     }
 
     // Process payment
@@ -142,7 +146,21 @@ public class PaymentService {
             return savedPayment;
         }
 
-        // Normal successful payment
+        // Process payment through the gateway
+        boolean gatewayApproved = paymentGateway.charge(
+                order.getId(),
+                order.getTotalAmount(),
+                request.getPaymentMethod()
+        );
+
+        if (!gatewayApproved) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Payment gateway is currently unavailable. Please try again later."
+            );
+        }
+
+        // Payment approved
         payment.setStatus("SUCCESS");
 
         Payment savedPayment = paymentRepository.save(payment);

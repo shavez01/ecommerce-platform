@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,12 +30,11 @@ public class GlobalExceptionHandler {
             ResponseStatusException ex,
             HttpServletRequest request) {
 
-        HttpStatus status = HttpStatus.valueOf(
-                ex.getStatusCode().value());
+        HttpStatusCode status = ex.getStatusCode();
 
         return buildResponse(
                 status,
-                ex.getReason() != null ? ex.getReason() : status.getReasonPhrase(),
+                ex.getReason() != null ? ex.getReason() :  HttpStatus.valueOf(status.value()).getReasonPhrase(),
                 request.getRequestURI());
     }
 
@@ -116,15 +116,15 @@ public class GlobalExceptionHandler {
         }
 
 
-    private ResponseEntity<ApiError> buildResponse(
-            HttpStatus status,
-            String message,
-            String path) {
+        private ResponseEntity<ApiError> buildResponse(
+                HttpStatusCode status,
+                String message,
+                String path) {
 
         ApiError error = new ApiError(
                 LocalDateTime.now(),
                 status.value(),
-                status.getReasonPhrase(),
+                HttpStatus.valueOf(status.value()).getReasonPhrase(),
                 message,
                 path);
 
