@@ -12,12 +12,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.ecommerce.monolith.customer.dto.CustomerResponse;
+import com.ecommerce.monolith.common.outbox.service.OutboxService;
 import com.ecommerce.monolith.customer.service.CustomerService;
+import com.ecommerce.monolith.kafka.config.KafkaTopicConfig;
 import com.ecommerce.monolith.kafka.event.OrderPlacedEvent;
 import com.ecommerce.monolith.kafka.producer.OrderEventProducer;
 import com.ecommerce.monolith.product.entity.Product;
@@ -35,11 +34,9 @@ public class OrderService {
         LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
-    private final CustomerService customerService;
     private final ProductService productService;
     private final InventoryService inventoryService;
-    private final OrderEventProducer orderEventProducer;
-    private final NotificationService notificationService;
+    private final OutboxService outboxService;
 
     public OrderService(
             OrderRepository orderRepository,
@@ -47,14 +44,13 @@ public class OrderService {
             ProductService productService,
             InventoryService inventoryService,
             OrderEventProducer orderEventProducer,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            OutboxService outboxService) {
 
         this.orderRepository = orderRepository;
-        this.customerService = customerService;
         this.productService = productService;
         this.inventoryService = inventoryService;
-        this.orderEventProducer = orderEventProducer;
-        this.notificationService = notificationService;
+        this.outboxService = outboxService;
     }
 
     // Place order
@@ -89,10 +85,6 @@ public class OrderService {
 
             return order;
         }
-
-        // 3. Validate customer
-        CustomerResponse customer =
-                customerService.getCustomerById(request.getCustomerId());
 
         // 4. Validate product
         Product product =
@@ -138,31 +130,11 @@ public class OrderService {
                 savedOrder.getCreatedAt()
         );
 
-        // 10. Publish event only after transaction commits
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-
-                    @Override
-                    public void afterCommit() {
-
-                        orderEventProducer.publishOrderPlacedEvent(event)
-                                .whenComplete((result, exception) -> {
-
-                                    if (exception != null) {
-                                        log.error(
-                                                "Failed to publish OrderPlacedEvent for orderId: {}",
-                                                event.orderId(),
-                                                exception
-                                        );
-                                    } else {
-                                        log.info(
-                                                "OrderPlacedEvent published successfully. OrderId: {}",
-                                                event.orderId()
-                                        );
-                                    }
-                                });
-                    }
-                }
+       outboxService.saveEvent(
+            "ORDER_PLACED",
+            String.valueOf(savedOrder.getId()),
+            KafkaTopicConfig.ORDER_PLACED_TOPIC,
+            event
         );
 
         return savedOrder;

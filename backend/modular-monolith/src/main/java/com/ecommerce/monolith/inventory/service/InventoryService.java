@@ -72,20 +72,26 @@ public class InventoryService {
     @Transactional
     public Inventory reduceStock(Long productId, Integer quantity) {
 
-        validateQuantity(quantity);
+        int updatedRows = inventoryRepository
+                .reduceStockIfAvailable(productId, quantity);
 
-        Inventory inventory = getInventoryByProductId(productId);
+        if (updatedRows == 0) {
 
-        if (inventory.getAvailableQuantity() < quantity) {
+            if (!inventoryRepository.existsByProductId(productId)) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Inventory not found");
+            }
+
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Insufficient stock available");
         }
 
-        inventory.setAvailableQuantity(
-                inventory.getAvailableQuantity() - quantity);
-
-        return inventoryRepository.save(inventory);
+        return inventoryRepository.findByProductId(productId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Inventory not found"));
     }
 
     private void validateQuantity(Integer quantity) {

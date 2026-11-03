@@ -15,9 +15,10 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ecommerce.monolith.common.outbox.service.OutboxService;
 import com.ecommerce.monolith.customer.dto.CustomerResponse;
-// import com.ecommerce.monolith.customer.entity.Customer;
 import com.ecommerce.monolith.customer.service.CustomerService;
+import com.ecommerce.monolith.kafka.config.KafkaTopicConfig;
 import com.ecommerce.monolith.kafka.event.PaymentSuccessEvent;
 import com.ecommerce.monolith.kafka.event.PaymentFailedEvent;
 import com.ecommerce.monolith.kafka.producer.PaymentEventProducer;
@@ -43,6 +44,7 @@ public class PaymentService {
     private final NotificationService notificationService;
     private final PaymentEventProducer paymentEventProducer;
     private final PaymentGateway paymentGateway;
+    private final OutboxService outboxService;
 
     public PaymentService(
             PaymentRepository paymentRepository,
@@ -50,7 +52,8 @@ public class PaymentService {
             CustomerService customerService,
             NotificationService notificationService,
             PaymentEventProducer paymentEventProducer,
-            PaymentGateway paymentGateway) {
+            PaymentGateway paymentGateway,
+            OutboxService outboxService) {
 
         this.paymentRepository = paymentRepository;
         this.orderService = orderService;
@@ -58,6 +61,7 @@ public class PaymentService {
         this.notificationService = notificationService;
         this.paymentEventProducer = paymentEventProducer;
         this.paymentGateway = paymentGateway;
+        this.outboxService = outboxService;
     }
 
     // Process payment
@@ -143,30 +147,11 @@ public class PaymentService {
                     savedPayment.getCreatedAt()
             );
 
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-
-                        @Override
-                        public void afterCommit() {
-
-                            paymentEventProducer.publishPaymentFailed(event)
-                                    .whenComplete((result, exception) -> {
-
-                                        if (exception != null) {
-                                            log.error(
-                                                    "Failed to publish PaymentFailedEvent for order: {}",
-                                                    event.orderId(),
-                                                    exception
-                                            );
-                                        } else {
-                                            log.info(
-                                                    "PaymentFailedEvent published successfully for order: {}",
-                                                    event.orderId()
-                                            );
-                                        }
-                                    });
-                        }
-                    }
+            outboxService.saveEvent(
+                "PAYMENT_FAILED",
+                String.valueOf(savedPayment.getOrderId()),
+                KafkaTopicConfig.PAYMENT_FAILED_TOPIC,
+                event
             );
 
             return savedPayment;
@@ -202,30 +187,11 @@ public class PaymentService {
                 savedPayment.getCreatedAt()
         );
 
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-
-                    @Override
-                    public void afterCommit() {
-
-                        paymentEventProducer.publishPaymentSuccess(event)
-                                .whenComplete((result, exception) -> {
-
-                                    if (exception != null) {
-                                        log.error(
-                                                "Failed to publish PaymentSuccessEvent for order: {}",
-                                                event.orderId(),
-                                                exception
-                                        );
-                                    } else {
-                                        log.info(
-                                                "PaymentSuccessEvent published successfully for order: {}",
-                                                event.orderId()
-                                        );
-                                    }
-                                });
-                    }
-                }
+        outboxService.saveEvent(
+            "PAYMENT_SUCCESS",
+            String.valueOf(savedPayment.getOrderId()),
+            KafkaTopicConfig.PAYMENT_SUCCESS_TOPIC,
+            event
         );
 
         CustomerResponse customer =
