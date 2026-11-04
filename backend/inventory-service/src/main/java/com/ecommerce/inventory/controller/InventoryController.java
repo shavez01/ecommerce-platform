@@ -13,7 +13,7 @@ public class InventoryController {
             new ConcurrentHashMap<>();
 
     public InventoryController() {
-        stock.put("6ae4339490ed4ef5709aa761", 10);
+        stock.put("6aeab994701420a4ba03c24c", 10);
     }
 
     @GetMapping("/{productId}")

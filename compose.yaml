@@ -62,7 +62,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/ecommerce
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/customer_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
     restart: unless-stopped
