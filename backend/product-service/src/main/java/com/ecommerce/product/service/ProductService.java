@@ -1,82 +1,57 @@
 package com.ecommerce.product.service;
 
 import com.ecommerce.product.dto.ProductRequest;
+import com.ecommerce.product.dto.ProductResponse;
 import com.ecommerce.product.entity.Product;
+import com.ecommerce.product.mapper.ProductMapper;
 import com.ecommerce.product.repository.ProductRepository;
 
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(
+            ProductRepository productRepository,
+            ProductMapper productMapper) {
+
         this.productRepository = productRepository;
+        this.productMapper = productMapper;
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<ProductResponse> getAllProducts() {
+        return productRepository.findAll()
+                .stream()
+                .map(productMapper::toResponse)
+                .toList();
     }
 
-    public Product getProductById(@NonNull String id) {
-        return productRepository.findById(id)
+    public ProductResponse getProductById(@NonNull String id) {
+
+        Product product = productRepository.findById(id)
                 .orElseThrow(() ->
-                        new java.util.NoSuchElementException(
-                                "Product not found: " + id));
+                        new NoSuchElementException("Product not found: " + id));
+
+        return productMapper.toResponse(product);
     }
 
-    public Product createProduct(ProductRequest request) {
+    public ProductResponse createProduct(ProductRequest request) {
+
         Product product = new Product(
                 request.name(),
                 request.price(),
                 request.stock()
         );
 
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+
+        return productMapper.toResponse(savedProduct);
     }
 }
-
-// import java.util.concurrent.ConcurrentHashMap;
-// import java.util.concurrent.atomic.AtomicLong;
-
-// @Service
-// public class ProductService {
-
-//     private final ConcurrentHashMap<Long, ProductResponse> products =
-//             new ConcurrentHashMap<>();
-
-//     private final AtomicLong idGenerator = new AtomicLong();
-
-//     public List<ProductResponse> getAllProducts() {
-//         return List.copyOf(products.values());
-//     }
-
-//     public ProductResponse getProductById(Long id) {
-//         ProductResponse product = products.get(id);
-
-//         if (product == null) {
-//             throw new java.util.NoSuchElementException(
-//                     "Product not found with id: " + id);
-//         }
-
-//         return product;
-//     }
-
-//     public ProductResponse createProduct(ProductRequest request) {
-//         Long id = idGenerator.incrementAndGet();
-
-//         ProductResponse product = new ProductResponse(
-//                 id,
-//                 request.name(),
-//                 request.price(),
-//                 request.stock()
-//         );
-
-//         products.put(id, product);
-//         return product;
-//     }
-// }

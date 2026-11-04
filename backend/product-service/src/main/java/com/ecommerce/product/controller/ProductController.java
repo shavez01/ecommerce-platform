@@ -1,8 +1,7 @@
 package com.ecommerce.product.controller;
 
 import com.ecommerce.product.dto.ProductRequest;
-
-import com.ecommerce.product.entity.Product;
+import com.ecommerce.product.dto.ProductResponse;
 import com.ecommerce.product.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.lang.NonNull;
@@ -22,18 +21,18 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAllProducts() {
+    public List<ProductResponse> getAllProducts() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
-    public Product getProductById(@PathVariable("id") @NonNull String id) {
+    public ProductResponse getProductById(@PathVariable("id") @NonNull String id) {
         return productService.getProductById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Product createProduct(
+    public ProductResponse createProduct(
             @Valid @RequestBody ProductRequest request) {
         return productService.createProduct(request);
     }
