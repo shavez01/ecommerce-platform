@@ -1,0 +1,50 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: http://host.docker.internal:8091
+              predicates:
+                - Path=/api/auth/**
+
+            - id: customer-service
+              uri: http://customer-service:8081
+              predicates:
+                - Path=/api/customers/**,/api/v1/customers/**
+
+            - id: product-service
+              uri: http://product-service:8082
+              predicates:
+                - Path=/api/products/**
+
+            - id: order-service
+              uri: http://order-service:8083
+              predicates:
+                - Path=/api/orders/**
+
+            - id: inventory-service
+              uri: http://inventory-service:8084
+              predicates:
+                - Path=/api/inventory/**
+
+            - id: payment-service
+              uri: http://payment-service:8085
+              predicates:
+                - Path=/api/payments/**
+
+            - id: invoice-service
+              uri: http://invoice-service:8086
+              predicates:
+                - Path=/api/invoices/**
+
+            - id: notification-service
+              uri: http://notification-service:8087
+              predicates:
+                - Path=/api/notifications/**
+
+  data:
+    redis:
+      host: host.docker.internal
+      port: 6379
