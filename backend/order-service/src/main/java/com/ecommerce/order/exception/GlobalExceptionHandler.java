@@ -9,6 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -85,6 +86,22 @@ public class GlobalExceptionHandler {
                 Map.of()
         );
     }
+
+    // @ExceptionHandler(RestClientResponseException.class)
+    // public ResponseEntity<ApiErrorResponse> handleRestClientException(
+    //         RestClientResponseException ex,
+    //         HttpServletRequest request) {
+
+    //     HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+
+    //     return buildResponse(
+    //             status,
+    //             status.name(),
+    //             "Downstream service error: " + ex.getStatusText(),
+    //             request.getRequestURI(),
+    //             Map.of()
+    //     );
+    // }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(
             HttpStatus status,

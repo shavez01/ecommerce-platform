@@ -13,12 +13,15 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+
 
 @Service
 public class OrderService {
@@ -49,16 +52,18 @@ public class OrderService {
 
         // 1. Get product details
         Map<?, ?> product = productRestClient.get()
-                .uri("/api/products/{id}", request.productId())
-                .retrieve()
-                .body(Map.class);
-
-        if (product == null) {
-                throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Product not found"
-                );
-        }
+        .uri("/api/products/{id}", request.productId())
+        .retrieve()
+        .onStatus(
+                status -> status.value() == 404,
+                (req, res) -> {
+                    throw new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Product not available"
+                    );
+                }
+        )
+        .body(Map.class);
 
         BigDecimal price =
                 new BigDecimal(product.get("price").toString());
@@ -71,6 +76,15 @@ public class OrderService {
                 .uri("/api/inventory/{id}/reserve?quantity={quantity}",
                         request.productId(), request.quantity())
                 .retrieve()
+                .onStatus(
+                        status -> status.value() == 404,
+                        (req, res) -> {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Inventory not available for this product"
+                        );
+                        }
+                )
                 .toBodilessEntity();
 
         // 3. Save pending order
@@ -84,7 +98,7 @@ public class OrderService {
         order = orderRepository.save(order);
 
         // 4. Process payment
-        Map<?, ?> payment = paymentRestClient.post()
+       Map<?, ?> payment = paymentRestClient.post()
                 .uri("/api/payments")
                 .body(Map.of(
                         "orderId", order.getId().toString(),
@@ -92,14 +106,24 @@ public class OrderService {
                         "method", "CARD"
                 ))
                 .retrieve()
+                .onStatus(
+                        status -> status.is4xxClientError() || status.is5xxServerError(),
+                        (req, res) -> {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_GATEWAY,
+                                "Payment service is currently unable to process the payment"
+                        );
+                        }
+                )
                 .body(Map.class);
 
         if (payment == null ||
                 !"SUCCESS".equals(payment.get("status"))) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Payment failed"
-                );
+
+        throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Payment failed: Transaction was not successful"
+        );
         }
 
         // 5. Confirm order
