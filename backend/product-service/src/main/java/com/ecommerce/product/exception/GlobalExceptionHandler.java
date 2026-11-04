@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -65,6 +66,20 @@ public class GlobalExceptionHandler {
                 status,
                 status.getReasonPhrase().toUpperCase().replace(" ", "_"),
                 ex.getReason() != null ? ex.getReason() : status.getReasonPhrase(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(
+            NoSuchElementException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "NOT_FOUND",
+                ex.getMessage(),
                 request.getRequestURI(),
                 Map.of()
         );
