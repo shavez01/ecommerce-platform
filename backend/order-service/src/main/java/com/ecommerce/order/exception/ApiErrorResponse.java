@@ -1,13 +1,14 @@
 package com.ecommerce.order.exception;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public record ApiErrorResponse(
-        Instant timestamp,
+        LocalDateTime timestamp,
         int status,
         String error,
         String message,
         String path,
-        Map<String, String> fieldErrors) {
+        Map<String, String> fieldErrors
+) {
 }
