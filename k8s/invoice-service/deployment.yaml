@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoice-service
+  namespace: ecommerce
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: invoice-service
+
+  template:
+    metadata:
+      labels:
+        app: invoice-service
+
+    spec:
+      containers:
+        - name: invoice-service
+          image: ecommerce-invoice:1.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8086
+
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=70"
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8086
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8086
+            initialDelaySeconds: 40
+            periodSeconds: 20

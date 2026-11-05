@@ -1,0 +1,67 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: api-gateway
+  namespace: ecommerce
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: api-gateway
+
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+
+    spec:
+      containers:
+        - name: api-gateway
+          image: ecommerce-gateway:1.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8090
+              name: http
+
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: kubernetes
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gateway-secret
+                  key: JWT_SECRET
+
+            - name: SPRING_DATA_REDIS_HOST
+              value: host.docker.internal
+
+            - name: SPRING_DATA_REDIS_PORT
+              value: "6379"
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
+            initialDelaySeconds: 45
+            periodSeconds: 15

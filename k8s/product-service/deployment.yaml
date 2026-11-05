@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: ecommerce
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: product-service
+
+  template:
+    metadata:
+      labels:
+        app: product-service
+
+    spec:
+      containers:
+        - name: product-service
+          image: ecommerce-product:1.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8082
+
+          env:
+            - name: SPRING_DATA_MONGODB_URI
+              value: mongodb://admin:MongoDev%40123@host.docker.internal:27018/ecommerce?authSource=admin
+
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=70"
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8082
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8082
+            initialDelaySeconds: 40
+            periodSeconds: 20
