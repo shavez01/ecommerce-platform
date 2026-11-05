@@ -11,12 +11,12 @@ spring:
                 - Path=/api/auth/**
 
             - id: customer-service
-              uri: http://customer-service:8081
+              uri: http://customer-service.ecommerce.svc.cluster.local:8081
               predicates:
                 - Path=/api/customers/**,/api/v1/customers/**
 
             - id: product-service
-              uri: http://product-service:8082
+              uri: http://product-service.ecommerce.svc.cluster.local:8082
               predicates:
                 - Path=/api/products/**
 
@@ -26,22 +26,22 @@ spring:
                 - Path=/api/orders/**
 
             - id: inventory-service
-              uri: http://inventory-service:8084
+              uri: http://inventory-service.ecommerce.svc.cluster.local:8084
               predicates:
                 - Path=/api/inventory/**
 
             - id: payment-service
-              uri: http://payment-service:8085
+              uri: http://payment-service.ecommerce.svc.cluster.local:8085
               predicates:
                 - Path=/api/payments/**
 
             - id: invoice-service
-              uri: http://invoice-service:8086
+              uri: http://invoice-service.ecommerce.svc.cluster.local:8086
               predicates:
                 - Path=/api/invoices/**
 
             - id: notification-service
-              uri: http://notification-service:8087
+              uri: http://notification-service.ecommerce.svc.cluster.local:8087
               predicates:
                 - Path=/api/notifications/**
 
