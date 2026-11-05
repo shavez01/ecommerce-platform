@@ -65,7 +65,7 @@ services:
     image: ecommerce-monolith:1.0
     container_name: ecommerce-monolith
     ports:
-      - "8091:8081"
+      - "8091:8091"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/ecommerce
       SPRING_DATASOURCE_USERNAME: root
