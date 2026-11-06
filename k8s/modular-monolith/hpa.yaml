@@ -2,14 +2,14 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 
 metadata:
-  name: order-service
+  name: modular-monolith-hpa
   namespace: ecommerce
 
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: order-service
+    name: modular-monolith
 
   minReplicas: 2
   maxReplicas: 5
@@ -21,3 +21,18 @@ spec:
         target:
           type: Utilization
           averageUtilization: 60
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+
+    scaleDown:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
