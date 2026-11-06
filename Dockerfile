@@ -15,6 +15,6 @@ WORKDIR /app
 
 COPY --from=build /workspace/backend/modular-monolith/target/modular-monolith-1.0.0-SNAPSHOT.jar app.jar
 
-EXPOSE 8081
+EXPOSE 8091
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

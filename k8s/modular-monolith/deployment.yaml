@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modular-monolith
+  namespace: ecommerce
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: modular-monolith
+
+  template:
+    metadata:
+      labels:
+        app: modular-monolith
+
+    spec:
+      containers:
+        - name: modular-monolith
+          image: ecommerce-monolith:1.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8091
+
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: kubernetes
+
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://host.docker.internal:3307/ecommerce
+
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-db-secret
+                  key: DB_PASSWORD
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gateway-secret
+                  key: JWT_SECRET
+
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=70"
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "700m"
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8091
+            initialDelaySeconds: 40
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8091
+            initialDelaySeconds: 60
+            periodSeconds: 20

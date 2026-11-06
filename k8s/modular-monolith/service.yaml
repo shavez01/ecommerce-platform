@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: modular-monolith
+  namespace: ecommerce
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: modular-monolith
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8091
+      targetPort: 8091

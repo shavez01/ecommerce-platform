@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: ecommerce-order:1.0
+          image: ecommerce-order:1.1
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -58,6 +58,9 @@ spec:
 
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=70"
+
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: "host.docker.internal:39092"
 
           resources:
             requests:
