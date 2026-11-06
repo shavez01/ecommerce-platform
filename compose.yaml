@@ -28,12 +28,13 @@ services:
     container_name: ecommerce-kafka
     ports:
       - "9092:9092"
+      - "39092:39092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,DOCKER://:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,DOCKER://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,DOCKER://:29092,K8S://:39092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,DOCKER://kafka:29092,K8S://host.docker.internal:39092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT,K8S:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
@@ -82,6 +83,11 @@ services:
   customer-service:
     image: ecommerce-customer:1.0
     container_name: ecommerce-customer
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        SERVICE: customer-service
     ports:
       - "8081:8081"
     environment:
@@ -93,6 +99,11 @@ services:
   product-service:
     image: ecommerce-product:1.0
     container_name: ecommerce-product
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        SERVICE: product-service
     ports:
       - "8082:8082"
     environment:
@@ -102,45 +113,109 @@ services:
     restart: unless-stopped
 
   order-service:
-    image: ecommerce-order:1.0
+    image: ecommerce-order:1.1
     container_name: ecommerce-order
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        SERVICE: order-service
     ports:
       - "8083:8083"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/ecommerce
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
       SERVICES_PRODUCT_URL: http://product-service:8082
       SERVICES_INVENTORY_URL: http://inventory-service:8084
       SERVICES_PAYMENT_URL: http://payment-service:8085
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+    depends_on:
+      - kafka
+      - product-service
+      - inventory-service
+      - payment-service
     restart: unless-stopped
 
   inventory-service:
     image: ecommerce-inventory:1.0
     container_name: ecommerce-inventory
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        SERVICE: inventory-service
     ports:
       - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/ecommerce
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
     restart: unless-stopped
 
   payment-service:
-    image: ecommerce-payment:1.0
+    image: ecommerce-payment:1.1
     container_name: ecommerce-payment
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        SERVICE: payment-service
     ports:
       - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/ecommerce_payment
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
     restart: unless-stopped
 
   invoice-service:
-    image: ecommerce-invoice:1.0
+    image: ecommerce-invoice:1.1
     container_name: ecommerce-invoice
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        SERVICE: invoice-service
     ports:
       - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/ecommerce_invoice
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: invoice-service
+      SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
+
+    depends_on:
+      - kafka
     restart: unless-stopped
 
   notification-service:
-    image: ecommerce-notification:1.0
+    image: ecommerce-notification:1.1
     container_name: ecommerce-notification
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        SERVICE: notification-service
     ports:
       - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3307/ecommerce_notification
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: notification-service
+      SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
+
+    depends_on:
+      - kafka
     restart: unless-stopped
 
 volumes:

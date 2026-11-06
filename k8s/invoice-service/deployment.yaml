@@ -19,15 +19,36 @@ spec:
     spec:
       containers:
         - name: invoice-service
-          image: ecommerce-invoice:1.0
+          image: ecommerce-invoice:1.1
           imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 8086
 
           env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://host.docker.internal:3307/ecommerce_invoice"
+
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-db-secret
+                  key: DB_PASSWORD
+
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=70"
+
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: "host.docker.internal:39092"
+
+            - name: SPRING_KAFKA_CONSUMER_GROUP_ID
+              value: "invoice-service"
+
+            - name: SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET
+              value: "earliest"
 
           resources:
             requests:

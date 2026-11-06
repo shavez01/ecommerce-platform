@@ -19,13 +19,25 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: ecommerce-payment:1.0
+          image: ecommerce-payment:1.1
           imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 8085
 
           env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://host.docker.internal:3307/ecommerce_payment"
+
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-db-secret
+                  key: DB_PASSWORD
+
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=70"
 

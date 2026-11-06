@@ -5,6 +5,7 @@ services:
     container_name: ecommerce-kafka
     ports:
       - "9092:9092"
+      - "39092:39092"
     environment:
       KAFKA_HEAP_OPTS: "-Xms256M -Xmx512M"
     restart: unless-stopped
