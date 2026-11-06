@@ -4,10 +4,12 @@ package com.ecommerce.order.service;
 import com.ecommerce.order.dto.OrderRequest;
 import com.ecommerce.order.dto.OrderResponse;
 import com.ecommerce.order.entity.Order;
+import com.ecommerce.order.event.OrderConfirmedEvent;
 import com.ecommerce.order.mapper.OrderMapper;
 import com.ecommerce.order.repository.OrderRepository;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -21,8 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-
-
 @Service
 public class OrderService {
 
@@ -31,19 +31,22 @@ public class OrderService {
     private final RestClient paymentRestClient;
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public OrderService(
             @Qualifier("productRestClient") RestClient productRestClient,
             @Qualifier("inventoryRestClient") RestClient inventoryRestClient,
             @Qualifier("paymentRestClient") RestClient paymentRestClient,
             OrderRepository orderRepository,
-            OrderMapper orderMapper) {
+            OrderMapper orderMapper,
+            ApplicationEventPublisher eventPublisher) {
 
         this.productRestClient = productRestClient;
         this.inventoryRestClient = inventoryRestClient;
         this.paymentRestClient = paymentRestClient;
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     @SuppressWarnings("null")
@@ -134,6 +137,19 @@ public class OrderService {
         // 5. Confirm order
         order.setStatus("CONFIRMED");
         order = orderRepository.save(order);
+
+        // 6. Publish application event
+        eventPublisher.publishEvent(
+                new OrderConfirmedEvent(
+                        order.getId(),
+                        order.getProductId(),
+                        order.getProductName(),
+                        order.getQuantity(),
+                        order.getTotalPrice(),
+                        order.getStatus(),
+                        order.getCreatedAt()
+                )
+        );
 
         return orderMapper.toResponse(order);
     }
