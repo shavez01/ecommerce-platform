@@ -98,16 +98,20 @@ public class OrderService {
         order = orderRepository.save(order);
 
         // 4. Process payment
-       Map<?, ?> payment = paymentRestClient.post()
+        String idempotencyKey = "order-" + order.getId() + "-payment";
+
+        Map<?, ?> payment = paymentRestClient.post()
                 .uri("/api/payments")
+                .header("Idempotency-Key", idempotencyKey)
                 .body(Map.of(
-                        "orderId", order.getId().toString(),
+                        "orderId", order.getId(),
                         "amount", total,
                         "method", "CARD"
                 ))
                 .retrieve()
                 .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
+                        status -> status.is4xxClientError()
+                                || status.is5xxServerError(),
                         (req, res) -> {
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_GATEWAY,
@@ -116,6 +120,7 @@ public class OrderService {
                         }
                 )
                 .body(Map.class);
+
 
         if (payment == null ||
                 !"SUCCESS".equals(payment.get("status"))) {
